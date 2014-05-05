@@ -19,6 +19,7 @@ function webform2pdf_install() {
     'h_txt' => '', 'f_txt' => '', 'p_body' => '%email_values', 'format' => 'filtered_html',
     'h_left_logo_size' => '270x205', 'h_right_logo_size' => '270x205',
     'f_left_logo_size' => '270x56', 'f_right_logo_size' => '270x56',
+    'p_background' => 0,
   ));
 }
 
@@ -237,6 +238,15 @@ function webform2pdf_schema() {
         'default' => '',
         'description' => 'Text input format type.',
       ),
+
+      'p_background' => array(
+        'description' => 'Page background image.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+
     ),
     'primary key' => array('nid'),
   );
@@ -300,7 +310,7 @@ function webform2pdf_update_7300(&$sandbox) {
 
   // Multi-part update.
   if (!isset($sandbox['webform2pdf_convert'])) {
-    db_change_field('webform2pd', 'format', 'format', array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''));
+    db_change_field('webform2pdf', 'format', 'format', array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''));
     $sandbox['webform2pdf_convert'] = 0;
     $sandbox['webform2pdf_count'] = db_query("SELECT COUNT(nid) FROM {webform2pdf}")->fetchField();
   }
@@ -361,6 +371,20 @@ function webform2pdf_update_7301() {
   variable_set('webform2pdf_default', $default);
 }
 
+/*
+ * Add background field
+ */
+function webform2pdf_update_7302(&$sandbox) {
+  db_add_field('webform2pdf', 'p_background', array('description' => 'Page background image.', 'type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0));
+
+  $webform2pdf_default = variable_get('webform2pdf_default', array());
+  $webform2pdf_default['p_background'] = 0;
+  variable_set('webform2pdf_default', $webform2pdf_default);
+
+  $sandbox['#finished'] = 1;
+  return t('The page background field added to the webform2pdf table.');
+}
+
 /**
  * Implements hook_requirements().
  */
@@ -385,7 +409,12 @@ function webform2pdf_requirements($phase) {
       }
       else {
         $pdf = new TCPDF();
-        $version = $pdf->getTCPDFVersion();
+        if (method_exists($pdf, 'getTCPDFVersion')) {
+          $version = $pdf->getTCPDFVersion();
+        }
+        elseif (class_exists('TCPDF_STATIC')) {
+          $version = TCPDF_STATIC::getTCPDFVersion();
+        }
       }
       if ( version_compare('4.5.000', $version) >= 0) {
         $error = TRUE;

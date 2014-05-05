@@ -137,7 +137,7 @@ function webform2pdf_help($path, $arg) {
 function webform2pdf_send2pdf($node, $submission) {
   $webform2pdf = _webform2pdf_get_template($node->nid);
   $nopdf = array();
-  if ($webform2pdf['enabled'] && $webform2pdf['pdf_send_email']) {
+  if (isset($webform2pdf['enabled']) && $webform2pdf['enabled'] && $webform2pdf['pdf_send_email']) {
     $no_mail = unserialize($webform2pdf['no_send_email_addr']);
 
     if (is_array($no_mail)) {
@@ -180,7 +180,8 @@ function webform2pdf_preprocess_webform_results_submissions(&$vars) {
     $i++;
   }
 
-  $last_header_key = array_pop(array_keys($vars['table']['#header']));
+  $header_keys = array_keys($vars['table']['#header']);
+  $last_header_key = array_pop($header_keys);
   $vars['table']['#operation_total'] += 1;
   $vars['table']['#header'][$last_header_key]['colspan'] += 1;
 }
@@ -343,6 +344,14 @@ function _webform2pdf_pdf_header($pdf, $node, $template) {
     $size['right']['h'] = 0;
   }
 
+    if (!empty($template['p_background'])) {
+    $f = file_load($template['p_background']);
+    $background = drupal_realpath($f->uri);
+  }
+  else {
+    $background = NULL;
+  }
+
   // set header font
   $pdf->setHeaderFont(array($template['h_font_family'], '', $template['h_font_size']));
   // set header margin
@@ -352,8 +361,7 @@ function _webform2pdf_pdf_header($pdf, $node, $template) {
   $header_msg = nl2br( _webform_filter_values($template['h_txt'], $node, NULL, NULL, FALSE) );
 
   // set header data
-  $pdf->setHeaderData($logo, $size, $header_msg, $template['h_txt_align']);
-
+  $pdf->setHeaderData($logo, $size, $header_msg, $template['h_txt_align'], array(), array(), $background);
   return $pdf;
 } // function _webform2pdf_pdf_header()
 
@@ -478,8 +486,8 @@ function theme_webform2pdf_content($vars) {
 function _webform2pdf_filter_values($string, $node, $submission) {
   $tokens = array();
   foreach ($node->webform['components'] as $component) {
-    if ($component['type'] == 'select') {
-      $values = $submission->data[$component['cid']]['value'];
+    if (isset($component['type']) && $component['type'] == 'select') {
+      $values = isset($submission->data[$component['cid']]['value']) ? $submission->data[$component['cid']]['value'] : '';
       if ( is_array($values) ) {
         $items = explode("<nl2br>", preg_replace("/(\r\n)+|(\n|\r)+/", "<nl2br>", $component['extra']['items']) );
 
@@ -499,9 +507,11 @@ function _webform2pdf_filter_values($string, $node, $submission) {
 
         foreach ($options as $key => $option) {
           if ( (in_array($option, $values)) || (in_array($key, $values)) ) {
-            $nl[] = ' - ' . $option . "<br />\n";
-            $all[] = '<u><b><span class="selected">' . $option . '</span></b></u>';
-            $nl_all[] = ' [X] ' . $option . "<br />\n";
+            if (!empty($option)) {
+              $nl[] = ' - ' . $option . "<br />\n";
+              $all[] = '<u><b><span class="selected">' . $option . '</span></b></u>';
+              $nl_all[] = ' [X] ' . $option . "<br />\n";
+            }
           }
           else {
             if (!empty($option)) {
@@ -563,33 +573,44 @@ function webform2pdf_mail_alter(&$message) {
       }
 
       if ( $attach_pdf ) {
-        $trenner  = '------------' . md5(uniqid(time()));
-
-        $content_type = $message['headers']['Content-Type'];
-        $message['headers']['Content-Type'] = 'multipart/mixed; boundary="' . $trenner . '"';
-        unset($message['headers']['Content-Transfer-Encoding']);
-
-        $body = "\n\n--" . $trenner . "\n" .
-              "Content-Type: " . $content_type . "\n" .
-              "Content-Transfer-Encoding: 8bit\n\n";
-        $body .= is_array($message['body']) ? drupal_wrap_mail(implode("\n\n", $message['body'])) : drupal_wrap_mail($message['body']);
-
-        unset($message['body']);
-
-        $message['body'][0] = $body;
-        unset($body);
-
         $node = node_load($webform2pdf_send2pdf['nid']);
         $filename = theme('webform2pdf_filename', array('node' => $node, 'submission' => $webform2pdf_send2pdf['sid']));
         unset($node);
 
-        $message['body'][0] .= "\n\n--" . $trenner . "\n";
-        $message['body'][0] .= "Content-Type: application/pdf; name=\"" . $filename . "\"\n";
-        $message['body'][0] .= "Content-Transfer-Encoding: base64\n";
-        $message['body'][0] .= "Content-Disposition: attachment; filename=\"" . $filename . "\"\n\n";
-        $message['body'][0] .= chunk_split( base64_encode( theme('webform2pdf_mail2pdf', array('nid' => $webform2pdf_send2pdf['nid'], 'sid' => $webform2pdf_send2pdf['sid'])) ) );
-        $message['body'][0] .= "\n\n";
-        $message['body'][0] .= "--" . $trenner . "--";
+        if (webform_email_html_capable()) {
+          if (module_exists('mimemail')) {
+            $attachment = new stdClass;
+            $attachment->filecontent = theme('webform2pdf_mail2pdf', $webform2pdf_send2pdf['nid'], $webform2pdf_send2pdf['sid']);
+            $attachment->filename = $filename;
+            $attachment->filemime = 'application/pdf';
+            $message['params']['attachments'][] = $attachment;
+          }
+        }
+        else {
+          $trenner  = '------------' . md5(uniqid(time()));
+
+          $content_type = $message['headers']['Content-Type'];
+          $message['headers']['Content-Type'] = 'multipart/mixed; boundary="' . $trenner . '"';
+          unset($message['headers']['Content-Transfer-Encoding']);
+
+          $body = "\n\n--" . $trenner . "\n" .
+            "Content-Type: " . $content_type . "\n" .
+            "Content-Transfer-Encoding: 8bit\n\n";
+          $body .= is_array($message['body']) ? drupal_wrap_mail(implode("\n\n", $message['body'])) : drupal_wrap_mail($message['body']);
+
+          unset($message['body']);
+
+          $message['body'][0] = $body;
+          unset($body);
+
+          $message['body'][0] .= "\n\n--" . $trenner . "\n";
+          $message['body'][0] .= "Content-Type: application/pdf; name=\"" . $filename . "\"\n";
+          $message['body'][0] .= "Content-Transfer-Encoding: base64\n";
+          $message['body'][0] .= "Content-Disposition: attachment; filename=\"" . $filename . "\"\n\n";
+          $message['body'][0] .= chunk_split( base64_encode( theme('webform2pdf_mail2pdf', array('nid' => $webform2pdf_send2pdf['nid'], 'sid' => $webform2pdf_send2pdf['sid'])) ) );
+          $message['body'][0] .= "\n\n";
+          $message['body'][0] .= "--" . $trenner . "--";
+        }
       }
     }
   }
@@ -600,7 +621,9 @@ function webform2pdf_mail_alter(&$message) {
  */
 function theme_webform2pdf_mail2pdf($vars) {
   $node = node_load($vars['nid']);
-  $submission = array_shift(_webform2pdf_get_submissions($vars['nid'], NULL, array($vars['sid'])));
+
+  $get_submissions = _webform2pdf_get_submissions($vars['nid'], NULL, array($vars['sid']));
+  $submission = array_shift($get_submissions);
 
   $template = _webform2pdf_get_template($node->nid);
   $pdf = theme('webform2pdf_pdf_init', array('node' => $node, 'template' => $template));
@@ -609,8 +632,11 @@ function theme_webform2pdf_mail2pdf($vars) {
     $pdf = theme('webform2pdf_pdf_footer', array('pdf' => $pdf, 'node' => $node, 'template' => $template));
     $pdf = theme('webform2pdf_pdf_page', array('pdf' => $pdf));
 
-    // initialize document
-    $pdf->AliasNbPages();
+    // todo: @deprecated deprecated since version 5.9.089 (2011-06-13)
+    if (method_exists($pdf, 'AliasNbPages')) {
+      // initialize document
+      $pdf->AliasNbPages();
+    }
 
     $page = theme('webform2pdf_content', array('node' => $node, 'submission' => $submission, 'template' => $template));
 

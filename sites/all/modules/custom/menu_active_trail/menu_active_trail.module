@@ -1,0 +1,20 @@
+<?php
+/**
+ * Implements hook_init()
+ */
+function menu_active_trail_init() {
+  //$menus = menu_get_active_trail();
+  //dpm($menus);
+  //dpm(menu_tree('main-menu'));
+  //dpm(menu_get_active_trail());
+  //dpm(menu_get_item());
+  //dpm(menu_main_menu());
+  $trail = menu_get_active_trail();
+  dpm($trail);
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function menu_active_trail_menu_link_alter(&$link) {
+}

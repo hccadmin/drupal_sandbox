@@ -1,0 +1,4 @@
+name = Menu active trail
+description = A module that properly displays active menu items based on menu item hierarchy
+core = 7.x
+package = Custom

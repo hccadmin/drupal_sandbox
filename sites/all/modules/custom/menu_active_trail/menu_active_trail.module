@@ -3,15 +3,15 @@
  * Implements hook_init()
  */
 function menu_active_trail_init() {
+  //dpm(menu_tree('main-menu'));
   //$menus = menu_get_active_trail();
   //dpm($menus);
-  //dpm(menu_tree('main-menu'));
   //dpm(menu_get_active_trail());
   //dpm(menu_get_item());
   //dpm(menu_main_menu());
   //$trail = menu_get_active_trail();
+  //dpm($trail);
   //$trail[1];
-  //dpm($trail[1]);
   //dpm(drupal_attributes($trail[2]));
   //$path = $_GET['q'];
   //dpm($path);
@@ -27,14 +27,43 @@ function menu_active_trail_init() {
   */
   //$menu_items[837]['#attributes']['class'][] = 'active';
   //dpm($menu_items);
+
+  //$links = menu_load_links('main-menu');
+  //dpm($links);
+  //theme('menu_parent_activate', $links);
+}
+
+function menu_active_trail_preprocess_links(&$links) {
+  //dpm($links);
+  dpm(menu_get_active_trail());
+  $items = menu_get_active_trail();
+
+  // Check if has child
+  /*
+  foreach($items as $item) {
+  	if($item['has_children']) {
+  */
+
+  // Check if child active
+  $current_item = $_GET['q'];
+
+  // Change parent style
+  //foreach($links as $link) {}
 }
 
 /*
-function menu_active_trail_menu_block_tree_alter(&$tree, &$config) {
-  //dpm($tree['50000 Batman main 837']);
-  //$tree['50000 Batman main 837']['link']['options']['class'] = 'active';
-
-  dpm($tree);
+function menu_active_trail_preprocess_menu_link(&$links) {
+  //dpm($links['element']);
+  $activeTrail = menu_get_active_trail();
+  foreach($links as $link) {
+  	//dpm($link);
+    if (isset($link['#original_link']) && 
+	          $link['#original_link']['in_active_trail'] &&
+	          $link['#original_link']['plid'] > 0) {
+        dpm($link);
+		//$parent = menu_link_load($link['#original_link']['plid']);
+	}
+  }
 }
 */
 
@@ -51,3 +80,4 @@ function menu_active_trail_preprocess_menu_link(&$items) {
 function menu_active_trail_menu_alter(&$link) {
   dpm($link);
 }
+

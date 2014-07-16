@@ -35,22 +35,42 @@ function menu_active_trail_init() {
 
 function menu_active_trail_preprocess_links(&$links) {
   //dpm($links);
-  dpm(menu_get_active_trail());
+  //dpm(menu_get_active_trail());
   $items = menu_get_active_trail();
-
-  // Check if has child
-  /*
-  foreach($items as $item) {
-  	if($item['has_children']) {
-  */
-
-  // Check if child active
-  $current_item = $_GET['q'];
-
-  // Change parent style
-  //foreach($links as $link) {}
+  if (count($items) > 2) {
+    foreach($links as $link) {
+	  if(preg_match('/active-trail/', $link) === 1) {
+	    dpm($link);
+	  }
+	}
+    //activate_parent($items[count($items) - 2], $links);
+  }
 }
 
+
+/*
+*/
+function activate_parent($items, &$links) {
+  $match = '/' . $items['mlid'] . '/';
+  if (count($items) < 2) {
+    return;
+  }
+
+  else {
+    foreach($links as $link) {
+	  if(count($link) > 1) {
+		foreach($link as $key => $value) {
+		  if( preg_match($match, $key ) === 1 ) {
+			$value['attributes']['class'][] = 'active';
+		  }
+		}
+      }
+	}
+  /*
+	*/
+  }
+}
+ 
 /*
 function menu_active_trail_preprocess_menu_link(&$links) {
   //dpm($links['element']);

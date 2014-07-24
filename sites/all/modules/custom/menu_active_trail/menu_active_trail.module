@@ -33,14 +33,16 @@ function menu_active_trail_init() {
   //theme('menu_parent_activate', $links);
 }
 
-function menu_active_trail_preprocess_links(&$links) {
+function menu_active_trail_process_links(&$links) {
   //dpm($links);
   //dpm(menu_get_active_trail());
   $items = menu_get_active_trail();
   if (count($items) > 2) {
     foreach($links as $link) {
-	  if(preg_match('/active-trail/', $link) === 1) {
-	    dpm($link);
+	  foreach($link as $key => $value) {
+	    if(preg_match('/active-trail/', $key) === 1) {
+	      $value['title'] = 'This is another damn test';
+		}
 	  }
 	}
     //activate_parent($items[count($items) - 2], $links);
@@ -49,7 +51,6 @@ function menu_active_trail_preprocess_links(&$links) {
 
 
 /*
-*/
 function activate_parent($items, &$links) {
   $match = '/' . $items['mlid'] . '/';
   if (count($items) < 2) {
@@ -66,10 +67,9 @@ function activate_parent($items, &$links) {
 		}
       }
 	}
-  /*
-	*/
   }
 }
+*/
  
 /*
 function menu_active_trail_preprocess_menu_link(&$links) {

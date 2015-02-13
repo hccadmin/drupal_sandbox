@@ -53,6 +53,8 @@ USAGE
     content to be output without normal page markup. If you are calling a view
     programatically, enable "Views API mode" to avoid early termination of
     Drupal execution.
+6. If using with the OpenLayers module, your new GeoJSON layer will be available
+  as an Overlay layer on the "Layers & Styles" tab when editing your map.
 
 Bounding Box Filtering
 --------------------
@@ -61,7 +63,7 @@ points within that box.
 
 It has been tested with OpenLayers' Bounding Box Strategy but should work
 with any mapping tool that requests bounding box coordinates as
-"?BBOX=left,bottom,right,top" in the query string. Argument ID "BBOX" is
+"?bbox=left,bottom,right,top" in the query string. Argument ID "bbox" is
 default for OpenLayers but can be changed.
 
 OpenLayers 7.x-2.x-dev is currently required for OpenLayers BBOX integration.
@@ -78,7 +80,7 @@ the GeoJSON layer type".
 4. In the Contextual Filter settings, under "When the filter value is NOT in
    the URL as a normal Drupal argument", choose: "Provide default value".
 5. In the "Type" dropdown, choose: "Bounding box from query string".
-6. For OpenLayers, leave "Query argument ID" as "BBOX" and click Apply.
+6. For OpenLayers, leave "Query argument ID" as "bbox" and click Apply.
 
 
 TO DO

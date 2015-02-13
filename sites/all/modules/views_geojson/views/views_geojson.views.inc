@@ -16,19 +16,25 @@ function views_geojson_views_plugins() {
     'style' => array(
       'views_geojson'      => array(
         'title'            => t('GeoJSON Feed'),
-        'help'             => t('Displays nodes in the GeoJSON data format.'),
+        'help'             => t('Deprecated, please use a "Feed" display instead of a "Page" display for this purpose.'),
         'handler'          => 'views_plugin_style_geojson',
-        'theme'            => 'views_views_geojson_style',
-        'theme path'       => $path . '/views',
-        'path'             => $path . '/views',
         'uses row plugin'  => FALSE,
         'uses fields'      => TRUE,
         'uses options'     => TRUE,
-        //'uses grouping'    => FALSE,
-        //'type'             => 'feed',
+        'uses grouping'    => FALSE,
         'type'             => 'normal',
-        //'help_topic'     => 'style-geojson',
-        'even empty'     => TRUE,
+        'even empty'       => TRUE,
+      ),
+      'views_geojson_feed' => array(
+        'title'            => t('GeoJSON Feed'),
+        'help'             => t('Displays nodes in the GeoJSON data format.'),
+        'handler'          => 'views_plugin_style_geojson',
+        'uses row plugin'  => FALSE,
+        'uses fields'      => TRUE,
+        'uses options'     => TRUE,
+        'uses grouping'    => FALSE,
+        'type'             => 'feed',
+        'even empty'       => TRUE,
       ),
     ),
     'argument default' => array(
@@ -66,7 +72,7 @@ function views_geojson_views_handlers() {
 function views_geojson_views_data() {
   $data = array();
 
-  $data['node']['bbox_argument'] = array(
+  $data['views']['bbox_argument'] = array(
     'group' => t('Custom'),
     'real field'  => 'bbox_argument',
     'title' => t('Bounding box'),
